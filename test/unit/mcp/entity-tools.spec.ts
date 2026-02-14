@@ -1,5 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registerEntityWrappers } from "../../../src/mcp/entity-tools";
+import {
+  registerEntityWrappers,
+  coerceKeyValue,
+} from "../../../src/mcp/entity-tools";
 import { McpResourceAnnotation } from "../../../src/annotations/structures";
 import { WrapAccess } from "../../../src/auth/utils";
 import { EntityListQueryArgs } from "../../../src/mcp/types";
@@ -822,6 +825,85 @@ describe("entity-tools - query filtering consistency", () => {
       expect(testData.filteredRecords).toBe(3);
       expect(testData.filteredSum).toBe(30);
       expect(testData.filteredSum).not.toBe(testData.totalSum);
+    });
+  });
+});
+
+describe("coerceKeyValue - CDS type-aware key coercion", () => {
+  describe("safe integer CDS types should coerce digit strings to numbers", () => {
+    it.each(["Integer", "Int16", "Int32", "UInt8"])(
+      "coerces digit-only string to number for CDS type %s",
+      (cdsType) => {
+        expect(coerceKeyValue("123", cdsType)).toBe(123);
+      },
+    );
+  });
+
+  describe("precision-sensitive types should preserve strings", () => {
+    it("preserves digit-only string for Int64 (exceeds MAX_SAFE_INTEGER risk)", () => {
+      expect(coerceKeyValue("9007199254740993", "Int64")).toBe(
+        "9007199254740993",
+      );
+    });
+
+    it("preserves small digit string for Int64 (consistent behavior)", () => {
+      expect(coerceKeyValue("123", "Int64")).toBe("123");
+    });
+
+    it("preserves digit string for Decimal (exact arithmetic)", () => {
+      expect(coerceKeyValue("12345", "Decimal")).toBe("12345");
+    });
+
+    it("preserves digit string for Double", () => {
+      expect(coerceKeyValue("123", "Double")).toBe("123");
+    });
+  });
+
+  describe("string CDS types should preserve digit-only strings", () => {
+    it("preserves digit-only string for CDS type String", () => {
+      expect(coerceKeyValue("202402110001", "String")).toBe("202402110001");
+    });
+
+    it("preserves digit-only string for CDS type UUID", () => {
+      expect(coerceKeyValue("123456", "UUID")).toBe("123456");
+    });
+
+    it("preserves digit-only string for CDS type LargeString", () => {
+      expect(coerceKeyValue("999", "LargeString")).toBe("999");
+    });
+  });
+
+  describe("non-string values are passed through unchanged", () => {
+    it("passes through number values for Integer type", () => {
+      expect(coerceKeyValue(42, "Integer")).toBe(42);
+    });
+
+    it("passes through number values for String type", () => {
+      expect(coerceKeyValue(42, "String")).toBe(42);
+    });
+
+    it("passes through boolean values", () => {
+      expect(coerceKeyValue(true, "Boolean")).toBe(true);
+    });
+
+    it("passes through null", () => {
+      expect(coerceKeyValue(null, "String")).toBe(null);
+    });
+  });
+
+  describe("non-numeric strings are never coerced", () => {
+    it("preserves alphanumeric string for Integer type", () => {
+      expect(coerceKeyValue("abc123", "Integer")).toBe("abc123");
+    });
+
+    it("preserves UUID-format string for Integer type", () => {
+      expect(
+        coerceKeyValue("550e8400-e29b-41d4-a716-446655440000", "Integer"),
+      ).toBe("550e8400-e29b-41d4-a716-446655440000");
+    });
+
+    it("preserves empty string", () => {
+      expect(coerceKeyValue("", "Integer")).toBe("");
     });
   });
 });

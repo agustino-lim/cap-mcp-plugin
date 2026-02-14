@@ -84,6 +84,35 @@ async function resolveServiceInstance(
 const MAX_TOP = 200;
 const TIMEOUT_MS = 10_000; // Standard timeout for tool calls (ms)
 
+/**
+ * CDS types whose values can be safely represented as a JavaScript Number.
+ *
+ * Excluded types and rationale:
+ * - Int64: values may exceed Number.MAX_SAFE_INTEGER (2^53-1), causing silent precision loss.
+ * - Decimal: CAP preserves these as strings for exact arithmetic; converting loses precision.
+ * - Double: same IEEE 754 precision concerns as Decimal.
+ */
+const SAFE_INTEGER_CDS_TYPES = new Set(["Integer", "Int16", "Int32", "UInt8"]);
+
+/**
+ * Converts a key value from string to number when the CDS type is a safe integer type.
+ * All other types are returned unchanged to preserve precision and type correctness.
+ *
+ * @param raw - The raw key value received from the MCP tool input.
+ * @param cdsType - The CDS type name of the key element (e.g. "String", "Integer").
+ * @returns The coerced value as a number for safe integer types, or the original value otherwise.
+ */
+export function coerceKeyValue(raw: unknown, cdsType: string): unknown {
+  if (
+    typeof raw === "string" &&
+    SAFE_INTEGER_CDS_TYPES.has(cdsType) &&
+    /^\d+$/.test(raw)
+  ) {
+    return Number(raw);
+  }
+  return raw;
+}
+
 // Map OData operators to CDS/SQL operators for better performance and readability
 const ODATA_TO_CDS_OPERATORS = new Map<string, string>([
   ["eq", "="],
@@ -461,7 +490,7 @@ function registerGetTool(
     }
 
     const keys: Record<string, unknown> = {};
-    for (const [k] of resAnno.resourceKeys.entries()) {
+    for (const [k, cdsType] of resAnno.resourceKeys.entries()) {
       let provided = (normalizedArgs as any)[k];
       if (provided === undefined) {
         const alt = Object.entries(normalizedArgs || {}).find(
@@ -473,9 +502,7 @@ function registerGetTool(
         LOGGER.warn(`Get tool missing required key`, { key: k, toolName });
         return toolError("MISSING_KEY", `Missing key '${k}'`);
       }
-      const raw = provided;
-      keys[k] =
-        typeof raw === "string" && /^\d+$/.test(raw) ? Number(raw) : raw;
+      keys[k] = coerceKeyValue(provided, cdsType);
     }
 
     LOGGER.debug(`Executing READ on ${resAnno.target} with keys`, keys);
@@ -836,7 +863,7 @@ function registerDeleteTool(
 
     // Extract keys - similar to get/update handlers
     const keys: Record<string, unknown> = {};
-    for (const [k] of resAnno.resourceKeys.entries()) {
+    for (const [k, cdsType] of resAnno.resourceKeys.entries()) {
       let provided = (args as any)[k];
       if (provided === undefined) {
         // Case-insensitive key matching (like in get handler)
@@ -849,10 +876,7 @@ function registerDeleteTool(
         LOGGER.warn(`Delete tool missing required key`, { key: k, toolName });
         return toolError("MISSING_KEY", `Missing key '${k}'`);
       }
-      // Coerce numeric strings (like in get handler)
-      const raw = provided;
-      keys[k] =
-        typeof raw === "string" && /^\d+$/.test(raw) ? Number(raw) : raw;
+      keys[k] = coerceKeyValue(provided, cdsType);
     }
 
     LOGGER.debug(`Executing DELETE on ${resAnno.target} with keys`, keys);

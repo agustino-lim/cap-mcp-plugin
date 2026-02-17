@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.5.1](https://github.com/gavdilabs/cap-mcp-plugin/compare/1.5.0...1.5.1) (2026-02-17)
+
+### Bug Fixes
+
+* Remove resource metadata endpoint RFC 9728 ([dd1fec5](https://github.com/gavdilabs/cap-mcp-plugin/commit/dd1fec5b3ea61fecacbc6b00579bf82ef23d2300))
+
 ## [1.5.0](https://github.com/gavdilabs/cap-mcp-plugin/compare/1.4.1...1.5.0) (2026-02-16)
 
 ### Features

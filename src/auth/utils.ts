@@ -277,9 +277,10 @@ async function configureOAuthProxy(expressApp: Application): Promise<void> {
  * For local development, falls back to `identityzone` or `tenantid` from credentials.
  *
  * @param req - Express request containing tenant context (via host header)
- * @param credentials - XSUAA credentials from CAP configuration
+ * @param credentials - XSUAA credentials from CAP configuration (must include uaadomain)
  * @param urlPath - The XSUAA endpoint path (e.g., "/oauth/authorize", "/oauth/token")
  * @returns Fully qualified tenant-specific XSUAA URL
+ * @throws {Error} When uaadomain is missing from credentials
  *
  * @example
  * // Multi-tenant production
@@ -313,8 +314,15 @@ export function resolveTenantAuthUrl(
     );
   }
 
-  const domain =
-    credentials.uaadomain || "authentication.eu10.hana.ondemand.com";
+  const domain = credentials.uaadomain;
+  if (!domain) {
+    throw new Error(
+      `Missing required 'uaadomain' in XSUAA credentials. ` +
+        `The uaadomain specifies your authentication domain (e.g., "authentication.eu10.hana.ondemand.com"). ` +
+        `Verify your XSUAA service binding includes this property.`,
+    );
+  }
+
   const xsuaaUrl = `https://${subdomain}.${domain}${urlPath}`;
 
   LOGGER.info("[MCP-XSUAA] Built subscriber XSUAA URL", {

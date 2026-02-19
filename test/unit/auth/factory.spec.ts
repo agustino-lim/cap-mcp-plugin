@@ -281,47 +281,48 @@ describe("Authentication Handler", () => {
     it("should resolve tenant from security context", () => {
       const mockSecurityContext = {
         getZoneId: jest.fn().mockReturnValue("tenant-123"),
-      };
+      } as any;
       expect(resolveTenantId(mockSecurityContext)).toBe("tenant-123");
     });
 
     it("should resolve tenant from token payload fallback", () => {
       const mockSecurityContext = {
-        getTokenInfo: jest.fn().mockReturnValue({
-          getPayload: jest.fn().mockReturnValue({ zid: "tenant-payload" }),
-        }),
-      };
+        token: {
+          zid: "tenant-payload",
+        },
+      } as any;
       expect(resolveTenantId(mockSecurityContext)).toBe("tenant-payload");
     });
 
     it("should create CAP user with correct roles using xsappname", () => {
       const mockSecurityContext = {
         getLogonName: jest.fn().mockReturnValue("testuser"),
-        getScopes: jest
-          .fn()
-          .mockReturnValue(["files!t1.Admin", "files!t1.User"]),
-        getAdditionalAuthzAttributes: jest
+        token: {
+          scopes: ["files!t1.Admin", "files!t1.User"],
+        },
+        getAdditionalAuthAttributes: jest
           .fn()
           .mockReturnValue({ attr1: "val1" }),
-      };
+      } as any;
 
       const user = extractUserPrincipal(mockSecurityContext, "files!t1");
 
       expect(user.id).toBe("testuser");
       expect(user.attr).toEqual({ attr1: "val1" });
-      expect(user._roles).toEqual({ Admin: true, User: true });
-      expect(user.authInfo).toBe(mockSecurityContext);
+      expect((user as any)._roles).toEqual({ Admin: true, User: true });
     });
 
     it("should handle scopes without xsappname prefix gracefully", () => {
       const mockSecurityContext = {
         getLogonName: jest.fn().mockReturnValue("testuser"),
-        getScopes: jest.fn().mockReturnValue(["other.Scope"]),
-      };
+        token: {
+          scopes: ["other.Scope"],
+        },
+      } as any;
 
       const user = extractUserPrincipal(mockSecurityContext, "files!t1");
 
-      expect(user._roles).toEqual({ "other.Scope": true });
+      expect((user as any)._roles).toEqual({ "other.Scope": true });
     });
 
     it("should include RFC 9728 header in unauthorized response", async () => {

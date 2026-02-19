@@ -653,10 +653,9 @@ describe("Authentication Utils", () => {
         );
 
         // Verify metadata endpoints
-        expect(getSpy).toHaveBeenCalledWith(
-          "/.well-known/oauth-protected-resource",
-          expect.any(Function),
-        );
+        // Note: /.well-known/oauth-protected-resource is intentionally disabled
+        // as a hotfix due to MCP clients not sending application/json Accept headers,
+        // causing XSUAA to return HTML instead of JSON (see bug note in utils.ts)
         expect(getSpy).toHaveBeenCalledWith(
           "/.well-known/oauth-authorization-server",
           expect.any(Function),
@@ -781,16 +780,14 @@ describe("Authentication Utils", () => {
         expect(result).toBe("https://mytenant.auth.com/oauth/token");
       });
 
-      it("should default to standard domain if uaadomain is missing", () => {
+      it("should throw error if uaadomain is missing", () => {
         const req = { headers: {} } as any;
         (resolveEffectiveHost as jest.Mock).mockReturnValue("tenant2.app.com");
         (isLocalDevelopmentHost as jest.Mock).mockReturnValue(false);
         const creds = { ...mockCredentials, uaadomain: undefined };
 
-        const result = resolveTenantAuthUrl(req, creds, "/info");
-
-        expect(result).toBe(
-          "https://tenant2.authentication.eu10.hana.ondemand.com/info",
+        expect(() => resolveTenantAuthUrl(req, creds, "/info")).toThrow(
+          /Missing required 'uaadomain' in XSUAA credentials/,
         );
       });
     });

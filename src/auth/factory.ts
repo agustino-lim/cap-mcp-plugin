@@ -4,6 +4,8 @@ import {
   RequestHandler,
   ErrorRequestHandler,
 } from "express";
+import type { User } from "@sap/cds";
+import type { XsuaaSecurityContext } from "@sap/xssec";
 import { XSUAAService } from "./xsuaa-service";
 import { AuthTypes, useMockAuth } from "./utils";
 import { LOGGER } from "../logger";
@@ -47,19 +49,19 @@ function send401WithMetadata(
  * Maps XSUAA scopes to CAP roles using standard SAP logic.
  */
 export function extractUserPrincipal(
-  securityContext: any,
+  securityContext: XsuaaSecurityContext,
   xsappname?: string,
-): any {
+): User {
   const userId =
     securityContext.getLogonName?.() ||
     securityContext.getEmail?.() ||
     "unknown";
-  const attrs = securityContext.getAdditionalAuthzAttributes?.() || {};
-  const scopes = securityContext.getScopes?.() || [];
+  const attrs = securityContext.getAdditionalAuthAttributes?.() || {};
+  const scopes = securityContext.token?.scopes || [];
 
   // Map XSUAA scopes to CAP roles using standard SAP logic
   // Role = scope with xsappname prefix removed
-  const roles = scopes.reduce((acc: any, scope: string) => {
+  const roles = scopes.reduce((acc: Record<string, boolean>, scope: string) => {
     let role = scope;
     if (xsappname && scope.startsWith(`${xsappname}.`)) {
       role = scope.replace(`${xsappname}.`, "");
@@ -70,24 +72,20 @@ export function extractUserPrincipal(
 
   const user = new cds.User({ id: userId, attr: attrs, _roles: roles });
 
-  // Attach authInfo for downstream services (destination resolution, token propagation)
-  (user as any).authInfo = securityContext;
-
   return user;
 }
 
 /**
  * Resolves the tenant ID from the security context or token payload.
  */
-export function resolveTenantId(securityContext: any): string | undefined {
-  const tokenInfo = securityContext.getTokenInfo?.();
-  const payload = tokenInfo?.getPayload?.() || tokenInfo?.payload;
-
+export function resolveTenantId(
+  securityContext: XsuaaSecurityContext,
+): string | undefined {
   return (
     securityContext.getZoneId?.() ||
-    payload?.zid ||
-    payload?.zone_id ||
-    payload?.tenantid
+    securityContext.token?.zid ||
+    (securityContext.token?.payload as any)?.zone_id ||
+    (securityContext.token?.payload as any)?.tenantid
   );
 }
 
@@ -127,7 +125,12 @@ export function authHandlerFactory(): RequestHandler {
       return;
     }
 
-    // For XSUAA/JWT auth types, use @sap/xssec for validation
+    // For XSUAA/JWT auth types, use @sap/xssec for validation.
+    // TODO: CAP middleware is already applied to MCP routes via registerAuthMiddleware() in utils.ts.
+    //  However, MCP routes use regex mounting (/^\/mcp(?!\/health).*/) which may not be fully
+    //  processed by CAP's standard auth pipeline in multi-tenant scenarios. This manual block
+    //  should be consolidated once multi-tenant integration testing confirms CAP middleware
+    //  coverage. See PR #125 review for context.
     if (
       (authKind === "jwt" || authKind === "xsuaa" || authKind === "ias") &&
       xsuaaService?.isConfigured()
@@ -138,9 +141,6 @@ export function authHandlerFactory(): RequestHandler {
         send401WithMetadata(req, res, "Invalid or expired token");
         return;
       }
-
-      // Add security context to request for later use
-      (req as any).securityContext = securityContext;
 
       // Initialize CAP context with resolved user and tenant
       const xsappname = xsuaaService?.getXsappname();

@@ -124,9 +124,14 @@ export class XSUAAService {
         subdomain;
     }
 
-    const domain =
-      this.credentials.authProvider?.uaadomain ||
-      "authentication.eu10.hana.ondemand.com";
+    const domain = this.credentials.authProvider?.uaadomain;
+    if (!domain) {
+      throw new Error(
+        `Missing required 'uaadomain' in XSUAA credentials. ` +
+          `The uaadomain specifies your authentication domain (e.g., "authentication.eu10.hana.ondemand.com"). ` +
+          `Verify your XSUAA service binding includes this property.`,
+      );
+    }
     return `https://${subdomain}.${domain}/oauth/token`;
   }
 
@@ -368,7 +373,7 @@ export class XSUAAService {
    */
   async createSecurityContext(
     req: Request,
-  ): Promise<xssec.SecurityContext<any, any> | null> {
+  ): Promise<xssec.XsuaaSecurityContext | null> {
     try {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer ")) {

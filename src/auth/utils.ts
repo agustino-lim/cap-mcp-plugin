@@ -615,25 +615,25 @@ export async function registerOAuthEndpoints(
     },
   );
 
+  // BUG: This element has been commented out as a part of a hotfix for authorization flows.
+  // It should not be included again until further investigation has been done, but a patch will have to be released to remedy this.
+  // This is likely related to the fact that most MCP clients do not include application/json as their preferred response time when authenticating,
+  // causing issues when targeting SAP's XSUAA service, that will default to HTML.
+  //
   // RFC 9728: OAuth 2.0 Protected Resource Metadata endpoint
-  expressApp.get(
-    "/.well-known/oauth-protected-resource",
-    (req: Request, res: Response): void => {
-      const baseUrl = buildPublicBaseUrl(req);
-
-      LOGGER.debug("[MCP-OAUTH] Protected resource metadata requested", {
-        baseUrl,
-      });
-
-      res.json({
-        resource: baseUrl,
-        authorization_servers: [baseUrl],
-        bearer_methods_supported: ["header"],
-        resource_documentation: `${baseUrl}/mcp/health`,
-        scopes_supported: ["openid"],
-      });
-    },
-  );
+  // expressApp.get(
+  //   "/.well-known/oauth-protected-resource",
+  //   (req: Request, res: Response): void => {
+  //     const baseUrl = buildPublicBaseUrl(req);
+  //
+  //     res.json({
+  //       resource: baseUrl,
+  //       authorization_servers: [credentials.url],
+  //       bearer_methods_supported: ["header"],
+  //       resource_documentation: `${baseUrl}/mcp/health`,
+  //     });
+  //   },
+  // );
 
   // OAuth Client Registration (GET)
   expressApp.get(

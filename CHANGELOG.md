@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.5.1](https://github.com/gavdilabs/cap-mcp-plugin/compare/1.5.0...1.5.1) (2026-02-17)
+
+### Bug Fixes
+
+* Remove resource metadata endpoint RFC 9728 ([dd1fec5](https://github.com/gavdilabs/cap-mcp-plugin/commit/dd1fec5b3ea61fecacbc6b00579bf82ef23d2300))
+
+## [1.5.0](https://github.com/gavdilabs/cap-mcp-plugin/compare/1.4.1...1.5.0) (2026-02-16)
+
+### Features
+
+* add [@mcp](https://github.com/mcp).wrap.name for custom tool naming ([#110](https://github.com/gavdilabs/cap-mcp-plugin/issues/110)) ([8ca790c](https://github.com/gavdilabs/cap-mcp-plugin/commit/8ca790cf8e04339dd78e78e5e3dbe9369f8ff01b))
+* describe model tool configuration ([#124](https://github.com/gavdilabs/cap-mcp-plugin/issues/124)) ([f68af0d](https://github.com/gavdilabs/cap-mcp-plugin/commit/f68af0d55bdf4b1c9cfe9de86f1bcb9546a69c05))
+
+### Bug Fixes
+
+* **entity-tools:** resolve key type coercion based on CDS metadata ([#132](https://github.com/gavdilabs/cap-mcp-plugin/issues/132)) ([802355a](https://github.com/gavdilabs/cap-mcp-plugin/commit/802355a38edadd31cd5115901d175da0b260508e)), closes [#126](https://github.com/gavdilabs/cap-mcp-plugin/issues/126)
+* implement OAuth 2.0 protected resource metadata discovery (RFC 9728) ([#114](https://github.com/gavdilabs/cap-mcp-plugin/issues/114)) ([8781a56](https://github.com/gavdilabs/cap-mcp-plugin/commit/8781a56ef7e0ecf820c7d37d1c5b23bfe8333469))
+
+### Additional Changes
+
+* **deps-dev:** bump @cap-js/sqlite from 2.1.0 to 2.1.3 ([#120](https://github.com/gavdilabs/cap-mcp-plugin/issues/120)) ([de3f7b9](https://github.com/gavdilabs/cap-mcp-plugin/commit/de3f7b93e6c713ff0a0d9b3901708231d3f517b2))
+* **deps-dev:** bump @release-it/conventional-changelog ([#118](https://github.com/gavdilabs/cap-mcp-plugin/issues/118)) ([d38cc68](https://github.com/gavdilabs/cap-mcp-plugin/commit/d38cc68c26973ada4db92a91b80152c3b1c4c232))
+* **deps:** bump @modelcontextprotocol/sdk from 1.25.3 to 1.26.0 ([#121](https://github.com/gavdilabs/cap-mcp-plugin/issues/121)) ([549efe3](https://github.com/gavdilabs/cap-mcp-plugin/commit/549efe3a061437ecf1642bf0f672e9d9ac917a94))
+* **deps:** bump cors from 2.8.5 to 2.8.6 ([#122](https://github.com/gavdilabs/cap-mcp-plugin/issues/122)) ([962ac89](https://github.com/gavdilabs/cap-mcp-plugin/commit/962ac89a47676b1734b0078f7cea9eeece28848a))
+* Set npm as the package ecosystem for Dependabot ([73d8d81](https://github.com/gavdilabs/cap-mcp-plugin/commit/73d8d814b52a4bca0119d3574eb98ad796113261))
+
 ## [1.4.1](///compare/1.4.0...1.4.1) (2026-02-02)
 
 ### Bug Fixes
